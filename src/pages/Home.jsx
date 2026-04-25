@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { supabase } from '../supabase'
+import { LogOut } from 'lucide-react'
 
 export default function Home() {
     const [votos, setVotos] = useState([])
     const [loading, setLoading] = useState(true)
     const { user, logout } = useAuth()
     const navigate = useNavigate()
-    const [show, setShow] = useState(false)
+    const [show, setShow] = useState(true)
 
     function salir() {
         logout()
@@ -60,14 +61,16 @@ export default function Home() {
                 <img src="fifi.png" alt="fifi" className='w-11'/>
                 <div className="flex items-center gap-4">
                     <span className="text-slate-400 text-sm hidden md:block">Admin: <span className="text-white font-semibold">{user.name}</span></span>
-                    <button onClick={salir} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm transition-all border border-red-500/10">Salir</button>
+                    <button onClick={salir} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm transition-all border border-red-500/10">
+                        <LogOut/>
+                    </button>
                 </div>
             </header>
 
             <button className="bg-amber-50 hover:bg-amber-50/90 w-11 p-2 rounded-full sticky left-5 top-25 z-10" onClick={() => setShow(!show)}>
                 <img src="paw.png" alt="paw"/>
             </button>
-            <main className="h-screen p-8 sm:w-[80%] lg:w-[75%] 2xl:w-[70%] mx-auto">
+            <main className=" p-8 sm:w-[80%] lg:w-[75%] 2xl:w-[70%] mx-auto my-10">
 
                 
                 {loading ? (
@@ -93,8 +96,7 @@ export default function Home() {
                                         {item.usuarioNombre.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="overflow-hidden">
-                                        <p className="text-xs text-slate-500 font-bold uppercase">Votante</p>
-                                        <p className="text-sm font-semibold truncate text-slate-200">{item.usuarioNombre}</p>
+                                        <p className="text-2xl font-bold truncate text-slate-200">{item.usuarioNombre}</p>
                                     </div>
                                 </div>
                             </div>

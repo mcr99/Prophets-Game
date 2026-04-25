@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase' 
 import { useAuth } from '../context/useAuth'
+import { LogOut } from 'lucide-react'
+
 
 export default function ClienteHome() {
     const [personas, setPersonas] = useState([])
     const [loading, setLoading] = useState(true)
     const [selected, setSelected] = useState(null)
+    const [showPopup, setShowPopup] = useState(false)
     const { user, logout } = useAuth()
     const navigate = useNavigate()
 
@@ -78,7 +81,7 @@ export default function ClienteHome() {
                 });
 
             if (error) throw error;
-            alert("¡Voto registrado con éxito!");
+            setShowPopup(true)
             
         } catch (error) {
             alert("Error: " + error.message);
@@ -103,7 +106,7 @@ export default function ClienteHome() {
                         onClick={salir}
                         className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm transition-colors"
                     >
-                        Cerrar Sesión
+                        <LogOut/>
                     </button>
                 </div>
             </nav>
@@ -126,6 +129,29 @@ export default function ClienteHome() {
                 </div>
                 <button className='bg-blue-600 p-4 w-full  rounded-2xl font-bold text-lg max-w-75' type='submit'>Enviar</button>
             </form>
+
+            {showPopup && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl transform transition-all scale-100 animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col items-center text-center">
+                {/* Icono de Check Animado */}
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-10">¡Voto Registrado!</h3>
+                
+                <button 
+                    onClick={() => setShowPopup(false)}
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl w-full transition-colors shadow-lg shadow-blue-600/20"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+)}
         </div>
     )
 }
