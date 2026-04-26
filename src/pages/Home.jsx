@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { supabase } from '../supabase'
-import { LogOut } from 'lucide-react'
+import { AlertTriangle, LogOut, RefreshCcw, Trash } from 'lucide-react'
+
+
+
 
 export default function Home() {
     const [votos, setVotos] = useState([])
@@ -10,6 +13,60 @@ export default function Home() {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
     const [show, setShow] = useState(true)
+    const [showConfirm, setShowConfirm] = useState(false)
+
+    const traerVotos = useCallback(async () => {
+        setLoading(true)
+        try {
+            const [respuestasRes, perfilesRes, personasRes] = await Promise.all([
+                supabase.from('respuestas').select('*'),
+                supabase.from('perfiles').select('id, name'),
+                supabase.from('personas').select('id, nombre, foto_url')
+            ])
+
+            if (respuestasRes.error) throw respuestasRes.error
+            
+            const listaFormateada = respuestasRes.data.map(voto => {
+                const perfil = perfilesRes.data?.find(p => p.id === voto.usuario_id)
+                const persona = personasRes.data?.find(pers => pers.id === voto.persona_id)
+
+                return {
+                    id: voto.id,
+                    usuarioNombre: perfil?.name || 'Usuario desconocido',
+                    elegidoNombre: persona?.nombre || 'Candidato',
+                    elegidoFoto: persona?.foto_url || ''
+                }
+            })
+
+            setVotos(listaFormateada)
+        } catch (error) {
+            console.error("Error en el panel de admin:", error.message)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    async function ejecutarBorrado() {
+    try {
+        setLoading(true)
+        setShowConfirm(false)
+
+        const { error } = await supabase
+            .from('respuestas')
+            .delete()
+            .gt('id', '00000000-0000-0000-0000-000000000000')
+
+        if (error) throw error
+        
+        setVotos([])
+
+    } catch (error) {
+        alert("Error al borrar votos: " + (error.message || "Error desconocido"))
+        console.error("Detalle completo:", error)
+    } finally {
+        setLoading(false)
+    }
+}
 
     function salir() {
         logout()
@@ -21,39 +78,8 @@ export default function Home() {
             navigate("/Login")
             return
         }
-
-        async function traerVotos() {
-            setLoading(true)
-            try {
-                const [respuestasRes, perfilesRes, personasRes] = await Promise.all([
-                    supabase.from('respuestas').select('*'),
-                    supabase.from('perfiles').select('id, name'),
-                    supabase.from('personas').select('id, nombre, foto_url')
-                ])
-
-                if (respuestasRes.error) throw respuestasRes.error
-                const listaFormateada = respuestasRes.data.map(voto => {
-                    const perfil = perfilesRes.data?.find(p => p.id === voto.usuario_id)
-                    const persona = personasRes.data?.find(pers => pers.id === voto.persona_id)
-
-                    return {
-                        id: voto.id,
-                        usuarioNombre: perfil?.name || 'Usuario desconocido',
-                        elegidoNombre: persona?.nombre || 'Candidato',
-                        elegidoFoto: persona?.foto_url || ''
-                    }
-                })
-
-                setVotos(listaFormateada)
-            } catch (error) {
-                console.error("Error en el panel de admin:", error.message)
-            } finally {
-                setLoading(false)
-            }
-        }
-
         traerVotos()
-    }, [user.token, navigate])
+    }, [user.token, navigate, traerVotos])
 
     return (
         <div className='relative'>
@@ -67,9 +93,17 @@ export default function Home() {
                 </div>
             </header>
 
-            <button className="bg-amber-50 hover:bg-amber-50/90 w-11 p-2 rounded-full sticky left-5 top-25 z-10" onClick={() => setShow(!show)}>
+            <div className='sticky w-11 flex flex-col gap-2 left-5 top-[45%] my-10 z-10'>
+            <button className="bg-amber-50 hover:bg-amber-50/90 w-11 p-2 rounded-full" onClick={() => setShow(!show)}>
                 <img src="paw.png" alt="paw"/>
             </button>
+            <button className="bg-amber-50 hover:bg-amber-50/90 w-11 p-2 rounded-full text-center" onClick={() => setShowConfirm(true)}>
+                <Trash className='text-red-600'/>
+            </button>
+            <button className="bg-amber-50 hover:bg-amber-50/90 w-11 p-2 rounded-full text-center" onClick={traerVotos}>
+                <RefreshCcw className='text-black'/>
+            </button>
+            </div>
             <main className=" p-8 sm:w-[80%] lg:w-[75%] 2xl:w-[70%] mx-auto my-10">
 
                 
@@ -103,6 +137,35 @@ export default function Home() {
                         ))}
                     </div>
                 )}
+
+                {showConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-sm w-full shadow-2xl transform animate-in zoom-in-95 duration-300">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+                                <AlertTriangle className="w-8 h-8 text-red-500" />
+                            </div>
+                            
+                            <h3 className="text-xl font-bold text-white mb-10">¿Reiniciar votación?</h3>
+                            
+                            <div className="flex gap-3 w-full">
+                                <button 
+                                    onClick={() => setShowConfirm(false)}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-xl transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={ejecutarBorrado}
+                                    className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-red-600/20 active:scale-95"
+                                >
+                                    Sí, borrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             </main>
         </div>
     )

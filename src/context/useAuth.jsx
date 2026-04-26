@@ -12,6 +12,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState({
+        id: localStorage.getItem("user_id") || null,
         token: localStorage.getItem("token") || null,
         username: localStorage.getItem("username") || null,
         name: localStorage.getItem("user_name"),
@@ -20,12 +21,14 @@ export function AuthProvider({ children }) {
     });
 
     function login(data) {
+        const id = data.user?.id || data.id;
         const token = data.session?.access_token || null;
         const email = data.email || null;
         const role = data.user_role || null;
         const userColor = data.color || "bg-slate-950";
         const name = data.name || "Usuario";
 
+        localStorage.setItem("user_id", id);
         localStorage.setItem("token", token);
         localStorage.setItem("username", email);
         localStorage.setItem("user_role", role);
@@ -33,6 +36,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem("user_name", name);
 
         setUser({
+            id: id,
             token: token,
             username: email,
             rol: role,
@@ -45,6 +49,7 @@ export function AuthProvider({ children }) {
         localStorage.clear();
 
         setUser({
+            id: null,
             token: null,
             username: null,
             name: null,
@@ -53,8 +58,17 @@ export function AuthProvider({ children }) {
         });
     }
 
+    function updateName(newName) {
+    localStorage.setItem("user_name", newName);
+
+    setUser(prev => ({
+        ...prev,
+        name: newName
+    }));
+}
+
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, updateName}}>
             {children}
         </AuthContext.Provider>
     );
